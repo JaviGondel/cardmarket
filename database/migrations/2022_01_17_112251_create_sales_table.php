@@ -17,6 +17,8 @@ class CreateSalesTable extends Migration
             $table->id();
             $table->integer('number_of_cards');
             $table->double('price');
+            $table->foreignId('card_id')->constrained();
+            $table->foreignId('user_id')->constrained();
             $table->timestamps();
         });
     }
