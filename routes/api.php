@@ -18,9 +18,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Middleware que verifica a los admins
 Route::middleware(['validateToken', 'validateRole'])->group(function () {
 
     Route::put('/register', [CardsAndCollectionsController::class, 'register']);
+    Route::put('/registerCollection', [CardsAndCollectionsController::class, 'registerCollection']);
 
 });
 

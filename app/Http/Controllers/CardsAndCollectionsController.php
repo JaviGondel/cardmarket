@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 class CardsAndCollectionsController extends Controller
 {
     
+    /////// CARDS ///////
+
     public function register (Request $req) {
 
         $answer = ['status' => 1, 'msg' => ''];
@@ -61,17 +63,50 @@ class CardsAndCollectionsController extends Controller
                 $answer['msg'] = "Card and collection registered correctly";
             }
 
-        }
-            
-            
-            
-
-        catch(\Exception $e) {
+        } catch(\Exception $e) {
             $answer['msg'] = $e -> getMessage();
             $answer['status'] = 0;
         }
 
-        return response()-> json($answer); 
+        return response()-> json($answer);
+    }
+
+
+
+    ////// COLLECTIONS //////
+
+    public function registerCollection (Request $req) {
+
+        $answer = ['status' => 1, 'msg' => ''];
+        
+        $dataCollection = $req -> getContent();
+
+
+        // Lo escribo en la base de datos
+        try {
+
+            // Valido los datos recibidos del json
+            $dataCollection = json_decode($dataCollection);
+
+            // Creo una nueva colección con los datos correspondientes
+            $collection = new Collection();
+
+            $collection -> name = $dataCollection -> name;
+            $collection -> description = $dataCollection -> description;
+
+            $collection -> save();
+
+
+            $answer['msg'] = "Collection registered correctly";
+            
+
+        } catch(\Exception $e) {
+            $answer['msg'] = $e -> getMessage();
+            $answer['status'] = 0;
+        }
+
+        return response()-> json($answer);
+
     }
 
 }
