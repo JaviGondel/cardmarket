@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Card;
 use App\Models\Collection;
+use App\Models\Sale;
 use App\Models\User;
 use DateTime;
 use Illuminate\Http\Request;
@@ -46,7 +47,6 @@ class CardsAndCollectionsController extends Controller
     
                 $card -> save();
 
-
                 $answer['msg'] = "Card registered correctly";
             } else {
 
@@ -72,6 +72,48 @@ class CardsAndCollectionsController extends Controller
         }
 
         return response()-> json($answer);
+    }
+
+
+    public function cardsToSale (Request $req) {
+
+        $answer = ['status' => 1, 'msg' => ''];
+        
+        $dataSale = $req -> getContent();
+        $user = $req->user;
+
+        // Valido los datos recibidos del json
+        $dataSale = json_decode($dataSale);
+
+        $card = DB::table('cards')->where('name', $dataSale -> name)->first();
+
+        if ($card) {
+            // Lo escribo en la base de datos
+            try {
+                // Creo una nueva compra con los datos correspondientes
+                $sale = new Sale();
+
+                $sale -> name = $dataSale -> name;
+                $sale -> number_of_cards = $dataSale -> number_of_cards;
+                $sale -> price = $dataSale -> price;
+                $sale -> card_id = $card -> id;
+                $sale -> user_id = $user -> id;
+
+                $sale -> save();
+
+                $answer['msg'] = "Sale created correctly";
+                
+            } catch(\Exception $e) {
+                $answer['msg'] = $e -> getMessage();
+                $answer['status'] = 0;
+            }
+            
+        } else {
+            $answer['msg'] = "No such card exists";
+        }
+
+        return response()-> json($answer);
+
     }
 
 

@@ -26,6 +26,16 @@ Route::middleware(['validateToken', 'validateRole'])->group(function () {
 
 });
 
+// Middleware de verificación para gestión de ventas
+
+Route::middleware(['validateToken', 'verifyToSell'])->group(function () {
+
+    Route::put('/cardsToSale', [CardsAndCollectionsController::class, 'cardsToSale']);
+
+});
+
+
+// Gestión de usuarios
 Route::prefix('/user')->group(function() {
 
     Route::put('/register', [UsersController::class, 'register']);
