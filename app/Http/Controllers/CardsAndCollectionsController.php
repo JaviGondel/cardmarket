@@ -96,6 +96,7 @@ class CardsAndCollectionsController extends Controller
                 $sale -> name = $dataSale -> name;
                 $sale -> number_of_cards = $dataSale -> number_of_cards;
                 $sale -> price = $dataSale -> price;
+
                 $sale -> card_id = $card -> id;
                 $sale -> user_id = $user -> id;
 
@@ -115,7 +116,6 @@ class CardsAndCollectionsController extends Controller
         return response()-> json($answer);
 
     }
-
 
 
     ////// COLLECTIONS //////
