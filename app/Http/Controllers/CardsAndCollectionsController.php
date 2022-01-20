@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Card;
 use App\Models\Collection;
 use App\Models\User;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 
 class CardsAndCollectionsController extends Controller
 {
@@ -50,7 +52,8 @@ class CardsAndCollectionsController extends Controller
 
                 $collection = new Collection();
                 $collection -> name = $dataCard -> collection;
-                $collection -> description = "Esta es una colección creada automáticamente al subir una carta";
+                $collection -> symbol = "defaultImage.jpg";
+                $collection -> edition_date = date('Y-m-d');
                 $collection -> save();
 
 
@@ -92,7 +95,8 @@ class CardsAndCollectionsController extends Controller
             $collection = new Collection();
 
             $collection -> name = $dataCollection -> name;
-            $collection -> description = $dataCollection -> description;
+            $collection -> symbol = $dataCollection -> symbol;
+            $collection -> edition_date = date('Y-m-d');
 
             $collection -> save();
 
