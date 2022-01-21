@@ -18,12 +18,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Middleware que verifica a los admins
 Route::middleware(['validateToken', 'validateRole'])->group(function () {
 
     Route::put('/register', [CardsAndCollectionsController::class, 'register']);
+    Route::put('/registerCollection', [CardsAndCollectionsController::class, 'registerCollection']);
 
 });
 
+// Middleware de verificación para gestión de ventas
+
+Route::middleware(['validateToken', 'verifyToSell'])->group(function () {
+
+    Route::put('/cardsToSale', [CardsAndCollectionsController::class, 'cardsToSale']);
+
+});
+
+
+// Gestión de usuarios
 Route::prefix('/user')->group(function() {
 
     Route::put('/register', [UsersController::class, 'register']);
