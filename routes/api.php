@@ -35,12 +35,15 @@ Route::middleware(['validateToken', 'verifyToSell'])->group(function () {
 });
 
 
-// Gestión de usuarios
+// Gestión de funciones públicas (Sin middlewares)
 Route::prefix('/user')->group(function() {
 
     Route::put('/register', [UsersController::class, 'register']);
     Route::put('/login', [UsersController::class, 'login']);
     Route::put('/recoveryPassword', [UsersController::class, 'recoveryPassword']);
+
+    Route::get('/searchToBuy', [CardsAndCollectionsController::class, 'searchToBuy']);
+    
 
 });
 

@@ -165,6 +165,51 @@ class CardsAndCollectionsController extends Controller
 
     }
 
+    public function searchToBuy(Request $req) {
+
+        $answer = ['status' => 1, 'msg' => '', 'data' => ''];
+
+        $card = $req->input('card');
+
+        try {
+
+            $answer['msg'] = "Aquí tienes la lista de las cartas solicitadas";
+
+            // Ejecuto la consulta para mostrar 
+            if ($card) {
+                $answer['data'] = DB::table('sales')
+                    ->join('users', 'sales.user_id', '=', 'users.id')
+                    ->where('sales.name' , 'like', '%'.$card.'%')
+                    ->select(
+                        'sales.name',
+                        'sales.number_of_cards',
+                        'sales.price',
+                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
+                    )
+                    ->orderBy('price', 'asc')
+                    ->get();
+            } else {
+                $answer['data'] = DB::table('cards')
+                    ->join('users', 'sales.user_id', '=', 'users.id')
+                    ->select(
+                        'sales.name',
+                        'sales.number_of_cards',
+                        'sales.price',
+                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
+                    )
+                    ->orderBy('price', 'asc')
+                    ->get();
+            }
+
+        } catch(\Exception $e) {
+            $answer['msg'] = $e -> getMessage();
+            $answer['status'] = 0;
+        }
+
+        return response()->json($answer);
+
+    }
+
     ////// COLLECTIONS //////
 
     public function registerCollection (Request $req) {
