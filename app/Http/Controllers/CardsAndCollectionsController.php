@@ -86,7 +86,6 @@ class CardsAndCollectionsController extends Controller
         return response()-> json($answer);
     }
 
-
     public function cardsToSale (Request $req) {
 
         $answer = ['status' => 1, 'msg' => ''];
@@ -129,6 +128,42 @@ class CardsAndCollectionsController extends Controller
 
     }
 
+    public function searchCard(Request $req) {
+
+        $answer = ['status' => 1, 'msg' => '', 'data' => ''];
+
+        $card = $req->input('card');
+
+        try {
+
+            $answer['msg'] = "Aquí tienes la lista de las cartas solicitadas";
+
+            // Ejecuto la consulta para mostrar 
+            if ($card) {
+                $answer['data'] = DB::table('cards')
+                    ->where('cards.name' , 'like', '%'.$card.'%')
+                    ->select(
+                        'cards.id',
+                        'cards.name',
+                    )
+                    ->get();
+            } else {
+                $answer['data'] = DB::table('cards')
+                    ->select(
+                        'cards.id',
+                        'cards.name',
+                    )
+                    ->get();
+            }
+
+        } catch(\Exception $e) {
+            $answer['msg'] = $e -> getMessage();
+            $answer['status'] = 0;
+        }
+
+        return response()->json($answer);
+
+    }
 
     ////// COLLECTIONS //////
 

@@ -26,12 +26,12 @@ Route::middleware(['validateToken', 'validateRole'])->group(function () {
 
 });
 
-// Middleware de verificación para gestión de ventas
-
+// Middleware de verificación para gestión de ventas (Profesionales y particulares)
 Route::middleware(['validateToken', 'verifyToSell'])->group(function () {
 
     Route::put('/cardsToSale', [CardsAndCollectionsController::class, 'cardsToSale']);
-
+    Route::get('/searchCard', [CardsAndCollectionsController::class, 'searchCard']);
+    
 });
 
 
