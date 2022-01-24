@@ -42,6 +42,7 @@ class CardsAndCollectionsController extends Controller
             
             // Para guardar la colección compruebo que previamente exista, si no existe creo una nueva colección
             $deck = DB::table('collections')->where('name', $dataCard -> collection)->first();
+            
             if($deck) {
 
                 $card -> collection = $dataCard -> collection;
@@ -128,87 +129,6 @@ class CardsAndCollectionsController extends Controller
 
     }
 
-    public function searchCard(Request $req) {
-
-        $answer = ['status' => 1, 'msg' => '', 'data' => ''];
-
-        $card = $req->input('card');
-
-        try {
-
-            $answer['msg'] = "Aquí tienes la lista de las cartas solicitadas";
-
-            // Ejecuto la consulta para mostrar 
-            if ($card) {
-                $answer['data'] = DB::table('cards')
-                    ->where('cards.name' , 'like', '%'.$card.'%')
-                    ->select(
-                        'cards.id',
-                        'cards.name',
-                    )
-                    ->get();
-            } else {
-                $answer['data'] = DB::table('cards')
-                    ->select(
-                        'cards.id',
-                        'cards.name',
-                    )
-                    ->get();
-            }
-
-        } catch(\Exception $e) {
-            $answer['msg'] = $e -> getMessage();
-            $answer['status'] = 0;
-        }
-
-        return response()->json($answer);
-
-    }
-
-    public function searchToBuy(Request $req) {
-
-        $answer = ['status' => 1, 'msg' => '', 'data' => ''];
-
-        $card = $req->input('card');
-
-        try {
-
-            $answer['msg'] = "Aquí tienes la lista de las cartas solicitadas";
-
-            // Ejecuto la consulta para mostrar 
-            if ($card) {
-                $answer['data'] = DB::table('sales')
-                    ->join('users', 'sales.user_id', '=', 'users.id')
-                    ->where('sales.name' , 'like', '%'.$card.'%')
-                    ->select(
-                        'sales.name',
-                        'sales.number_of_cards',
-                        'sales.price',
-                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
-                    )
-                    ->orderBy('price', 'asc')
-                    ->get();
-            } else {
-                $answer['data'] = DB::table('cards')
-                    ->join('users', 'sales.user_id', '=', 'users.id')
-                    ->select(
-                        'sales.name',
-                        'sales.number_of_cards',
-                        'sales.price',
-                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
-                    )
-                    ->orderBy('price', 'asc')
-                    ->get();
-            }
-
-        } catch(\Exception $e) {
-            $answer['msg'] = $e -> getMessage();
-            $answer['status'] = 0;
-        }
-
-        return response()->json($answer);
-
-    }
 
     ////// COLLECTIONS //////
 
@@ -287,6 +207,141 @@ class CardsAndCollectionsController extends Controller
         }
 
         return response()-> json($answer);
+
+    }
+
+    public function addCardToCollection (Request $req) {
+        
+        $answer = ['status' => 1, 'msg' => ''];
+        
+        $cardName = $req->input('card_name');
+        $collectionName = $req->input('collection_name');
+
+        $card = DB::table('cards')->where('name', $cardName)->first();
+        $collection = DB::table('collections')->where('name', $collectionName)->first();
+
+        $idCard = $card->id;
+        $idCollection = $collection->id;
+
+        $addedCardToCollection = DB::table('cards_collections')
+                                ->select('card_id' , 'collection_id')
+                                ->where('card_id', $idCard)
+                                ->where('collection_id', $idCollection)
+                                ->first();
+
+        if($addedCardToCollection) {
+
+            $answer['msg'] = "La carta ya esta añadida a esta coleccion";
+
+        } else {
+
+            if ($card) {
+
+                if ($collection) {
+    
+                // Registro la carta y la colección en la tabla de Cards_Collection
+                $cardCollection = new Card_Collection();
+    
+                $cardCollection -> card_id = $card->id;
+                $cardCollection -> collection_id = $collection->id;
+                $cardCollection->save();
+    
+                $answer['msg'] = "La carta se ha añadido correctamente";
+    
+    
+                } else {
+                    $answer['msg'] = "La colección a la que quiere añadir la carta no existe";
+                }
+    
+            } else {
+                $answer['msg'] = "La carta a añadir no existe";
+            }
+        }
+
+        return response()-> json($answer);
+
+    }
+
+
+    ////// Filters //////
+
+    public function searchCard(Request $req) {
+
+        $answer = ['status' => 1, 'msg' => '', 'data' => ''];
+
+        $card = $req->input('card');
+
+        try {
+
+            $answer['msg'] = "Aquí tienes la lista de las cartas solicitadas";
+
+            // Ejecuto la consulta para mostrar 
+            if ($card) {
+                $answer['data'] = DB::table('cards')
+                    ->where('cards.name' , 'like', '%'.$card.'%')
+                    ->select(
+                        'cards.id',
+                        'cards.name',
+                    )
+                    ->get();
+            } else {
+                $answer['data'] = DB::table('cards')
+                    ->select(
+                        'cards.id',
+                        'cards.name',
+                    )
+                    ->get();
+            }
+
+        } catch(\Exception $e) {
+            $answer['msg'] = $e -> getMessage();
+            $answer['status'] = 0;
+        }
+
+        return response()->json($answer);
+
+    }
+
+    public function searchToBuy(Request $req) {
+
+        $answer = ['status' => 1, 'msg' => '', 'data' => ''];
+
+        $card = $req->input('card');
+
+        try {
+
+            $answer['msg'] = "Aquí tienes la lista de las cartas solicitadas";
+
+            // Ejecuto la consulta para mostrar 
+            if ($card) {
+                $answer['data'] = DB::table('sales')
+                    ->where('sales.name' , 'like', '%'.$card.'%')
+                    ->select(
+                        'sales.name',
+                        'sales.number_of_cards',
+                        'sales.price',
+                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
+                    )
+                    ->orderBy('price', 'asc')
+                    ->get();
+            } else {
+                $answer['data'] = DB::table('sales')
+                    ->select(
+                        'sales.name',
+                        'sales.number_of_cards',
+                        'sales.price',
+                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
+                    )
+                    ->orderBy('price', 'asc')
+                    ->get();
+            }
+
+        } catch(\Exception $e) {
+            $answer['msg'] = $e -> getMessage();
+            $answer['status'] = 0;
+        }
+
+        return response()->json($answer);
 
     }
 
