@@ -23,6 +23,7 @@ Route::middleware(['validateToken', 'validateRole'])->group(function () {
 
     Route::put('/register', [CardsAndCollectionsController::class, 'register']);
     Route::put('/registerCollection', [CardsAndCollectionsController::class, 'registerCollection']);
+    Route::put('/addCardToCollection', [CardsAndCollectionsController::class, 'addCardToCollection']);
 
 });
 
