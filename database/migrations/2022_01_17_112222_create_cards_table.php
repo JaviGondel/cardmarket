@@ -17,9 +17,6 @@ class CreateCardsTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('description');
-            $table->string('collection');
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('collection_id')->constrained();
             $table->timestamps();
         });
     }
