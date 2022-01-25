@@ -22,7 +22,6 @@ class CardsAndCollectionsController extends Controller
         $answer = ['status' => 1, 'msg' => ''];
         
         $dataCard = $req -> getContent();
-        $user = $req->user;
 
         // Lo escribo en la base de datos
         try {
@@ -30,55 +29,30 @@ class CardsAndCollectionsController extends Controller
             // Valido los datos recibidos del json
             $dataCard = json_decode($dataCard);
 
-            // Creo una nueva carta con los datos correspondientes
-            $card = new Card();
-
-            $card -> name = $dataCard -> name;
-            $card -> description = $dataCard -> description;
-            
-            
-            // Para introducir el id del usuario que pone a la venta la carta, lo cojo directamente del propio usuario logeado
-            $card -> user_id = $user->id;
-            
             // Para guardar la colección compruebo que previamente exista, si no existe creo una nueva colección
-            $deck = DB::table('collections')->where('name', $dataCard -> collection)->first();
+            $deck = DB::table('collections')->where('id', $dataCard -> collection_id)->first();
             
             if($deck) {
 
-                $card -> collection = $dataCard -> collection;
-                $card -> collection_id = $deck->id;
-    
+                // Creo una nueva carta con los datos correspondientes
+                $card = new Card();
+                $card -> name = $dataCard -> name;
+                $card -> description = $dataCard -> description;
                 $card -> save();
+
+                // Registro la carta y la colección en la tabla de Cards_Collection
+                $cardCollection = new Card_Collection();
+                $cardCollection -> card_id = $card->id;
+                $cardCollection -> collection_id = $deck->id;
+                $cardCollection->save();
 
                 $answer['msg'] = "Card registered correctly";
 
             } else {
 
-                $collection = new Collection();
-                $collection -> name = $dataCard -> collection;
-                $collection -> symbol = "defaultImage.jpg";
-                $collection -> edition_date = date('Y-m-d');
-                $collection -> first_card = $dataCard -> name;
-                $collection -> save();
-
-
-                $card -> collection = $dataCard -> collection;
-                $card -> collection_id = $collection -> id;
-
-                $card -> save();
-
-                $deck = $collection;
-
-                $answer['msg'] = "Card and collection registered correctly";
+                $answer['msg'] = "The selected collection doesn´t exist";
             }
-
-            // Registro la carta y la colección en la tabla de Cards_Collection
-            $cardCollection = new Card_Collection();
-
-            $cardCollection -> card_id = $card->id;
-            $cardCollection -> collection_id = $deck->id;
-            $cardCollection->save();
-
+            
         } catch(\Exception $e) {
             $answer['msg'] = $e -> getMessage();
             $answer['status'] = 0;
@@ -137,7 +111,6 @@ class CardsAndCollectionsController extends Controller
         $answer = ['status' => 1, 'msg' => ''];
         
         $dataCollection = $req -> getContent();
-        $user = $req->user;
 
         // Valido el campo del nombre para que no se pueda repetir y cree dos colecciones iguales.
         $validator = Validator::make(json_decode($dataCollection, true), [
@@ -145,7 +118,7 @@ class CardsAndCollectionsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $answer['msg'] = "Ha ocurrido un error: " . $validator->errors()->first();
+            $answer['msg'] = "Error: " . $validator->errors()->first();
         } else {
 
             // Lo escribo en la base de datos
@@ -156,49 +129,41 @@ class CardsAndCollectionsController extends Controller
 
                 // Creo una nueva colección con los datos correspondientes
                 $collection = new Collection();
-
                 $collection -> name = $dataCollection -> name;
                 $collection -> symbol = $dataCollection -> symbol;
                 $collection -> edition_date = date('Y-m-d');
+                $collection -> save();
 
-                // Compruebo que la carta que quiera añadir en la colección exista
-                $card = DB::table('cards')->where('name', $dataCollection->first_card)->first();
+                $answer['msg'] = "Collection registered correctly";
 
-                if ($card) {
+                // Compruebo si la carta introducida existe
+                $cardExist = DB::table('cards')->where('id', $dataCollection -> card_id)->first();
 
-                    $collection -> first_card = $dataCollection -> first_card;
-                    $collection -> save();
+                if ($cardExist) {
 
-
-                    $answer['msg'] = "Collection registered correctly";
+                // Registro la carta y la colección en la tabla de Cards_Collection (Añado la carta a la colección)
+                $cardCollection = new Card_Collection();
+                $cardCollection -> card_id = $cardExist->id;
+                $cardCollection -> collection_id = $collection->id;
+                $cardCollection->save();
 
                 } else {
 
-                    // Guardo la colección con el nombre de la carta creada
-                    $collection -> first_card = $dataCollection -> first_card;
-                    $collection -> save();
-
-                    // Creo una nueva carta con los datos correspondientes
+                    // Creo una nueva carta default con los datos correspondientes ya que la colección no puede estar vacía
                     $card = new Card();
-
-                    $card -> name = $dataCollection -> first_card;
+                    $card -> name = "Default card";
                     $card -> description = "Esta es una carta creada automáticamente al crear una colección";
-                    $card -> collection = $dataCollection -> name;
-                    $card -> user_id = $user -> id;
-                    $card -> collection_id = $collection -> id;
-
                     $card -> save();
 
                     $answer['msg'] = "Collection and card registered correctly";
+
+                    // Registro la carta y la colección en la tabla de Cards_Collection
+                    $cardCollection = new Card_Collection();
+                    $cardCollection -> card_id = $card->id;
+                    $cardCollection -> collection_id = $collection->id;
+                    $cardCollection->save();
+
                 }
-
-                // Registro la carta y la colección en la tabla de Cards_Collection
-                $cardCollection = new Card_Collection();
-
-                $cardCollection -> card_id = $card->id;
-                $cardCollection -> collection_id = $collection->id;
-                $cardCollection->save();
-                
 
             } catch(\Exception $e) {
                 $answer['msg'] = $e -> getMessage();
@@ -214,48 +179,61 @@ class CardsAndCollectionsController extends Controller
         
         $answer = ['status' => 1, 'msg' => ''];
         
-        $cardName = $req->input('card_name');
-        $collectionName = $req->input('collection_name');
+        $dataToAdd = $req -> getContent();
+        $dataToAdd= json_decode($dataToAdd);
 
-        $card = DB::table('cards')->where('name', $cardName)->first();
-        $collection = DB::table('collections')->where('name', $collectionName)->first();
+        try {
 
-        $idCard = $card->id;
-        $idCollection = $collection->id;
+            $tryCardId = $dataToAdd->card_id;
+            $tryCollectionId = $dataToAdd->collection_id;
 
-        $addedCardToCollection = DB::table('cards_collections')
-                                ->select('card_id' , 'collection_id')
-                                ->where('card_id', $idCard)
-                                ->where('collection_id', $idCollection)
-                                ->first();
+            // Busco si existe tanto la carta como la colección
+            $card = DB::table('cards')->where('id', $tryCardId)->first();
+            $collection = DB::table('collections')->where('id', $tryCollectionId)->first();
 
-        if($addedCardToCollection) {
+            $idCard = $card->id;
+            $idCollection = $collection->id;
 
-            $answer['msg'] = "La carta ya esta añadida a esta coleccion";
+            // Compruebo si esta carta ya está añadida a esa misma colección
+            $addedCardToCollection = DB::table('cards_collections')
+                                    ->select('card_id' , 'collection_id')
+                                    ->where('card_id', $idCard)
+                                    ->where('collection_id', $idCollection)
+                                    ->first();
 
-        } else {
+            if($addedCardToCollection) {
 
-            if ($card) {
+                $answer['msg'] = "The card is already added to this collection.";
 
-                if ($collection) {
-    
-                // Registro la carta y la colección en la tabla de Cards_Collection
-                $cardCollection = new Card_Collection();
-    
-                $cardCollection -> card_id = $card->id;
-                $cardCollection -> collection_id = $collection->id;
-                $cardCollection->save();
-    
-                $answer['msg'] = "La carta se ha añadido correctamente";
-    
-    
-                } else {
-                    $answer['msg'] = "La colección a la que quiere añadir la carta no existe";
-                }
-    
             } else {
-                $answer['msg'] = "La carta a añadir no existe";
+
+                if ($card) {
+
+                    if ($collection) {
+        
+                    // Si la carta y la colección existen, registro la carta y la colección en la tabla de Cards_Collection
+                    $cardCollection = new Card_Collection();
+        
+                    $cardCollection -> card_id = $idCard;
+                    $cardCollection -> collection_id = $idCollection;
+                    $cardCollection->save();
+        
+                    $answer['msg'] = "The card has been added correctly";
+        
+        
+                    } else {
+                        $answer['msg'] = "The collection to which you want to add the card doesn´t exist.";
+                    }
+        
+                } else {
+                    $answer['msg'] = "The card you want to add does not exist";
+                }
             }
+
+
+        } catch(\Exception $e) {
+            $answer['msg'] = $e -> getMessage();
+            $answer['status'] = 0;
         }
 
         return response()-> json($answer);
@@ -285,12 +263,9 @@ class CardsAndCollectionsController extends Controller
                     )
                     ->get();
             } else {
-                $answer['data'] = DB::table('cards')
-                    ->select(
-                        'cards.id',
-                        'cards.name',
-                    )
-                    ->get();
+                
+                $answer['msg'] = "No existen datos con la carta solicitada";
+
             }
 
         } catch(\Exception $e) {
@@ -325,15 +300,9 @@ class CardsAndCollectionsController extends Controller
                     ->orderBy('price', 'asc')
                     ->get();
             } else {
-                $answer['data'] = DB::table('sales')
-                    ->select(
-                        'sales.name',
-                        'sales.number_of_cards',
-                        'sales.price',
-                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
-                    )
-                    ->orderBy('price', 'asc')
-                    ->get();
+                
+                $answer['msg'] = "No existen datos con la carta solicitada";
+
             }
 
         } catch(\Exception $e) {

@@ -17,7 +17,6 @@ class CreateCollectionsTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('symbol');
-            $table->string('first_card');
             $table->date('edition_date');
             $table->timestamps();
         });
