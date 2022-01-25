@@ -71,7 +71,7 @@ class CardsAndCollectionsController extends Controller
         // Valido los datos recibidos del json
         $dataSale = json_decode($dataSale);
 
-        $card = DB::table('cards')->where('name', $dataSale -> name)->first();
+        $card = DB::table('cards')->where('id', $dataSale -> card_id)->first();
 
         if ($card) {
             // Lo escribo en la base de datos
@@ -79,7 +79,6 @@ class CardsAndCollectionsController extends Controller
                 // Creo una nueva compra con los datos correspondientes
                 $sale = new Sale();
 
-                $sale -> name = $dataSale -> name;
                 $sale -> number_of_cards = $dataSale -> number_of_cards;
                 $sale -> price = $dataSale -> price;
 
@@ -289,19 +288,21 @@ class CardsAndCollectionsController extends Controller
 
             // Ejecuto la consulta para mostrar 
             if ($card) {
-                $answer['data'] = DB::table('sales')
-                    ->where('sales.name' , 'like', '%'.$card.'%')
+                $answer['data'] = DB::table('cards')
+                    ->join('sales', 'sales.card_id', '=', 'cards.id')
+                    ->join('users', 'sales.user_id', '=', 'users.id')
+                    ->where('cards.name' , 'like', '%'.$card.'%')
                     ->select(
-                        'sales.name',
+                        'cards.name',
                         'sales.number_of_cards',
                         'sales.price',
-                        DB::raw('(SELECT users.name FROM users WHERE sales.user_id = users.id) as user')
+                        'users.name as user'
                     )
                     ->orderBy('price', 'asc')
                     ->get();
             } else {
                 
-                $answer['msg'] = "No existen datos con la carta solicitada";
+                $answer['msg'] = "Introduzca una carta a buscar";
 
             }
 

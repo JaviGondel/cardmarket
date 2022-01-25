@@ -15,7 +15,6 @@ class CreateSalesTable extends Migration
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
             $table->integer('number_of_cards');
             $table->double('price');
             $table->foreignId('card_id')->constrained();
